@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.contrib import slim
+# from tensorflow.contrib import slim
 import os,cv2
 import numpy as np
 

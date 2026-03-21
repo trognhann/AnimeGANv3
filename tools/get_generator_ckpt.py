@@ -33,7 +33,7 @@ def main(checkpoint_dir, save_dir):
     with tf.variable_scope("generator", reuse=True):
         _ = generator.G_net(placeholder, is_training=False)
 
-    variables = tf.contrib.framework.get_variables_to_restore()
+    variables = tf.compat.v1.global_variables()
     # only base tail
     generator_var = [var for var in variables if var.name.startswith('generator')  and ('main' in var.name or 'base' in var.name) and 'Adam' not in var.name and 'support' not in var.name]
     # the whole generator

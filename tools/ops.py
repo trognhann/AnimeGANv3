@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow.contrib as tf_contrib
 from .tf_color_ops import rgb_to_lab
 from .vgg19 import Vgg19
 
@@ -10,8 +9,8 @@ from .vgg19 import Vgg19
 # l2_decay : tf_contrib.layers.l2_regularizer(0.0001)
 
 
-weight_init = tf_contrib.layers.xavier_initializer()
-weight_regularizer = tf_contrib.layers.l2_regularizer(scale=0.0001)
+weight_init = tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform")
+weight_regularizer = tf.keras.regularizers.l2(0.0001)
 
 
 
@@ -57,20 +56,22 @@ def GroupNorm(x, G=16, eps=1e-5):
     return x * gamma + beta
 
 
-def instance_norm(x, scope=None):
-    return tf_contrib.layers.instance_norm(x,
-                                           epsilon=1e-05,
-                                           center=True, scale=True,
-                                           scope=scope)
+def instance_norm(x, scope='instance_norm'):
+    with tf.compat.v1.variable_scope(scope, default_name='instance_norm'):
+        mean, var = tf.nn.moments(x, [1, 2], keepdims=True)
+        scale = tf.compat.v1.get_variable('scale', [x.get_shape()[-1]], initializer=tf.ones_initializer())
+        offset = tf.compat.v1.get_variable('offset', [x.get_shape()[-1]], initializer=tf.zeros_initializer())
+        return scale * (x - mean) / tf.sqrt(var + 1e-05) + offset
 
-def layer_norm(x, scope=None) :
-    return tf_contrib.layers.layer_norm(x,
-                                        center=True, scale=True,
-                                        scope=scope)
+def layer_norm(x, scope='layer_norm'):
+    with tf.compat.v1.variable_scope(scope, default_name='layer_norm'):
+        mean, var = tf.nn.moments(x, [1, 2, 3], keepdims=True)
+        scale = tf.compat.v1.get_variable('scale', [x.get_shape()[-1]], initializer=tf.ones_initializer())
+        offset = tf.compat.v1.get_variable('offset', [x.get_shape()[-1]], initializer=tf.zeros_initializer())
+        return scale * (x - mean) / tf.sqrt(var + 1e-05) + offset
 
 def batch_norm(x, is_training=True, scope=None):
-    return tf_contrib.layers.batch_norm(x, is_training=is_training, center=True, scale= True,
-                                        updates_collections=tf.GraphKeys.UPDATE_OPS, zero_debias_moving_mean=True, scope=scope)
+    return tf.compat.v1.layers.batch_normalization(x, training=is_training, center=True, scale=True, name=scope)
 
 
 def batch_norm_wrapper(inputs, is_training, decay = 0.999, epsilon=0.001):
@@ -163,16 +164,16 @@ def Conv2D(inputs, filters, kernel_size=3, strides=1, padding='VALID', Use_bias 
         pad_top, pad_left = kernel_size - strides - pad_bottom,  kernel_size - strides - pad_right
 
     inputs = tf.pad(inputs, [[0, 0], [pad_top, pad_bottom], [pad_left, pad_right], [0, 0]], mode="REFLECT")
-    return tf.contrib.layers.conv2d(
-        inputs,
-        num_outputs=filters,
+    return tf.compat.v1.layers.conv2d(
+        inputs=inputs,
+        filters=filters,
         kernel_size=kernel_size,
-        stride=strides,
-        weights_initializer=weight_init,
-        weights_regularizer=weight_regularizer,
-        biases_initializer= Use_bias,
-        normalizer_fn=None,
-        activation_fn=activation_fn,
+        strides=strides,
+        kernel_initializer=weight_init,
+        kernel_regularizer=weight_regularizer,
+        bias_initializer=Use_bias if Use_bias is not None else tf.zeros_initializer(),
+        use_bias=Use_bias is not None,
+        activation=activation_fn,
         padding=padding)
 
 def Conv2d_LN_LReLU(inputs, filters, kernel_size=3, strides=1, name=None, padding='VALID', Use_bias = None):

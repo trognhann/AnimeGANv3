@@ -68,7 +68,7 @@ def test(checkpoint_dir, save_dir, test_dir,):
         test_s0, test_m = generator.G_net(test_real, False)
         test_s1 = tanh_out_scale(guided_filter(sigm_out_scale(test_s0), sigm_out_scale(test_s0), 2, 0.01))  # 0.25**2
 
-    variables = tf.contrib.framework.get_variables_to_restore()
+    variables = tf.compat.v1.global_variables()
     # generator_var = [var for var in variables if var.name.startswith('generator') and ('main'  in var.name  or 'base'  in var.name) and 'Adam' not in var.name and 'support' not in var.name]
     generator_var = [var for var in variables if var.name.startswith('generator') and  'Adam' not in var.name ]
     saver = tf.train.Saver(generator_var)
