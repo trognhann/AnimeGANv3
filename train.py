@@ -10,6 +10,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
     # parser.add_argument('--style_dataset', type=str, default='Hayao', help='dataset_name')
     parser.add_argument('--style_dataset', type=str, default='Shinkai', help='dataset_name')
+    parser.add_argument('--dataset_dir', type=str, default='dataset', help='dataset directory')
+    parser.add_argument('--vgg_dir', type=str, default='vgg19_weight', help='vgg model directory')
 
     parser.add_argument('--init_G_epoch', type=int, default=5, help='The number of epochs for generator initialization')
     parser.add_argument('--epoch', type=int, default=100, help='The number of epochs to run')

@@ -19,6 +19,7 @@ class AnimeGANv3(object) :
         self.checkpoint_dir = args.checkpoint_dir
         self.log_dir = args.log_dir
         self.dataset_name = args.style_dataset
+        self.dataset_dir = args.dataset_dir
 
         self.epoch = args.epoch
         self.init_G_epoch = args.init_G_epoch
@@ -49,9 +50,9 @@ class AnimeGANv3(object) :
         self.anime = tf.placeholder(tf.float32, [self.batch_size, self.img_size[0], self.img_size[1], self.img_ch], name='anime_image')
         self.anime_smooth = tf.placeholder(tf.float32, [self.batch_size, self.img_size[0], self.img_size[1], self.img_ch], name='anime_smooth_image')
 
-        self.real_generator = ImageGenerator('./dataset/train_photo', self.img_size, self.batch_size)
-        self.anime_image_generator = ImageGenerator('./dataset/{}'.format(self.dataset_name + '/style'), self.img_size, self.batch_size)
-        self.anime_smooth_generator = ImageGenerator('./dataset/{}'.format(self.dataset_name + '/smooth_noise'), self.img_size, self.batch_size)
+        self.real_generator = ImageGenerator('{}/train_photo'.format(self.dataset_dir), self.img_size, self.batch_size)
+        self.anime_image_generator = ImageGenerator('{}/{}/style'.format(self.dataset_dir, self.dataset_name), self.img_size, self.batch_size)
+        self.anime_smooth_generator = ImageGenerator('{}/{}/smooth_noise'.format(self.dataset_dir, self.dataset_name), self.img_size, self.batch_size)
         self.dataset_num = max(self.real_generator.num_images, self.anime_image_generator.num_images)
 
         print()
@@ -265,7 +266,7 @@ class AnimeGANv3(object) :
             if (epoch + 1) >= self.init_G_epoch:
             # if (epoch + 1) >= 1:
                 """ Result Image """
-                val_files = glob('./dataset/{}/*.*'.format('val'))
+                val_files = glob('{}/{}/*.*'.format(self.dataset_dir, 'val'))
                 save_path = './{}/{:03d}/'.format(self.sample_dir, epoch)
                 check_folder(save_path)
                 for i, sample_file in enumerate(val_files):

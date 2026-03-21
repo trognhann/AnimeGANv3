@@ -349,10 +349,15 @@ def gram(x):
 """
 vgg19 obj
 """
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--vgg_dir', type=str, default='vgg19_weight', help='vgg model directory')
+args_ops, _ = parser.parse_known_args()
+
 try:
-    vgg19 = Vgg19('./vgg19_weight/vgg19_no_fc.npy')
+    vgg19 = Vgg19(f'./{args_ops.vgg_dir}/vgg19_no_fc.npy')
 except:
-    vgg19 = Vgg19('../vgg19_weight/vgg19_no_fc.npy')
+    vgg19 = Vgg19(f'../{args_ops.vgg_dir}/vgg19_no_fc.npy')
 
 def VGG_LOSS(x, y):
     # The number of feature channels in layer 4-4 of vgg19 is 512
