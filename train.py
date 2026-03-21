@@ -2,7 +2,7 @@ from AnimeGANv3_shinkai import AnimeGANv3
 import argparse
 from tools.utils import *
 import os, time
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 """parsing and configuration"""
 def parse_args():

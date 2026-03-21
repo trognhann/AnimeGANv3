@@ -49,12 +49,22 @@ def imsave(images, path):
 
 def show_all_variables():
     model_vars = tf.trainable_variables()
-    # slim.model_analyzer.analyze_vars(model_vars, print_info=True)
-    print('G:')
-    slim.model_analyzer.analyze_vars([var for var in tf.trainable_variables() if var.name.startswith('generator') and  'Adam' not in var.name], print_info=True)
-    # slim.model_analyzer.analyze_vars([var for var in tf.trainable_variables() ],print_info=True)
-    # print('D:')
-    # slim.model_analyzer.analyze_vars([var for var in tf.trainable_variables() if var.name.startswith('discriminator')], print_info=True)
+    try:
+        from tensorflow.contrib import slim
+        print('G:')
+        slim.model_analyzer.analyze_vars([var for var in tf.trainable_variables() if var.name.startswith('generator') and  'Adam' not in var.name], print_info=True)
+    except (ImportError, AttributeError):
+        g_vars = [var for var in tf.trainable_variables() if var.name.startswith('generator') and 'Adam' not in var.name]
+        print('G:')
+        total_params = 0
+        for var in g_vars:
+            shape = var.get_shape().as_list()
+            params = 1
+            for dim in shape:
+                params *= dim
+            total_params += params
+            print('  ', var.name, shape)
+        print('  Total G params:', total_params)
 
 def check_folder(log_dir):
     if not os.path.exists(log_dir):
