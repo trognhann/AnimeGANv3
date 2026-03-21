@@ -1,6 +1,6 @@
 """Color Space Ops."""
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 def rgb_to_bgr(input, name=None):

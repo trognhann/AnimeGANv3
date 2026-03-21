@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from .tf_color_ops import rgb_to_lab
 from .vgg19 import Vgg19
 
@@ -9,7 +9,7 @@ from .vgg19 import Vgg19
 # l2_decay : tf_contrib.layers.l2_regularizer(0.0001)
 
 
-weight_init = tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform")
+weight_init = tf.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform")
 weight_regularizer = tf.keras.regularizers.l2(0.0001)
 
 

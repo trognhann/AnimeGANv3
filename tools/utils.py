@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 # from tensorflow.contrib import slim
 import os,cv2
 import numpy as np

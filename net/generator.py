@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tools.ops import conv_LADE_Lrelu, External_attention_v3,Conv2D
 
 

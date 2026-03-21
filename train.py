@@ -1,3 +1,6 @@
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
+
 from AnimeGANv3_shinkai import AnimeGANv3
 import argparse
 from tools.utils import *
