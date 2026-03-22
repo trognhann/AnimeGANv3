@@ -10,7 +10,15 @@ import numpy as np
 from net import generator
 from tools.GuidedFilter import guided_filter
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# Auto-detect GPU/CPU
+gpus = tf.config.list_physical_devices('GPU') if hasattr(tf.config, 'list_physical_devices') else tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    print(f" [*] GPU detected: {[g.name for g in gpus]}")
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+else:
+    print(" [*] No GPU detected, using CPU")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 def check_folder(log_dir):
