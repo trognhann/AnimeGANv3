@@ -3,7 +3,9 @@ import os,cv2
 from tqdm import tqdm
 from glob import glob
 import time
-import tensorflow as tf
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 import numpy as np
 from net import generator
 from tools.GuidedFilter import guided_filter
@@ -51,7 +53,7 @@ def tanh_out_scale(x):
 def parse_args():
     desc = "AnimeGANv3"
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('--checkpoint_dir', type=str, default='checkpoint/generator_v3_Hayao_weight',help='Directory name to save the checkpoints')
+    parser.add_argument('--checkpoint_dir', type=str, default='checkpoint/checkpoint_shaikin',help='Directory name to save the checkpoints')
     parser.add_argument('--test_dir', type=str, default='inputs/imgs', help='Directory name of test photos')
     parser.add_argument('--save_dir', type=str, default='style_results/',help='Directory name of results')
     return parser.parse_args()

@@ -1,0 +1,5 @@
+*.npy
+*.ckpt
+*.png
+__pycache__/
+checkpoint/
