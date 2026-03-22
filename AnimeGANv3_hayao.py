@@ -52,7 +52,7 @@ class AnimeGANv3(object) :
 
         self.real_generator = ImageGenerator('{}/train_photo'.format(self.dataset_dir), self.img_size, self.batch_size)
         self.anime_image_generator = ImageGenerator('{}/{}/style'.format(self.dataset_dir, self.dataset_name), self.img_size, self.batch_size)
-        self.anime_smooth_generator = ImageGenerator('{}/{}/smooth'.format(self.dataset_dir, self.dataset_name), self.img_size, self.batch_size)
+        self.anime_smooth_generator = ImageGenerator('{}/{}/smooth_noise'.format(self.dataset_dir, self.dataset_name), self.img_size, self.batch_size)
         self.dataset_num = max(self.real_generator.num_images, self.anime_image_generator.num_images)
 
         print()
@@ -92,39 +92,39 @@ class AnimeGANv3(object) :
         self.gray_anime_smooth = tf.image.grayscale_to_rgb(tf.image.rgb_to_grayscale(self.anime_smooth))
 
         # support
-        gray_anime_smooth_logit = self.discriminator(self.gray_anime_smooth)
+        fake_gray_logit = self.discriminator(self.fake_sty_gray)
         anime_gray_logit = self.discriminator(self.anime_sty_gray,  reuse=True, )
-        fake_gray_logit = self.discriminator(self.fake_sty_gray, reuse=True, )
+        gray_anime_smooth_logit = self.discriminator(self.gray_anime_smooth, reuse=True, )
+
         # main
         generated_m_logit = self.discriminator(self.generated_m, scope="discriminator_main")
         fake_NLMean_logit = self.discriminator(self.fake_NLMean_l0, reuse=True, scope="discriminator_main")
 
         """ Define Loss """
         # init G
-        self.Pre_train_G_loss = con_loss(self.real_photo, self.generated) + con_loss(self.real_photo, self.generated_m)
+        self.Pre_train_G_loss = con_loss(self.real_photo, self.generated) #+ con_loss(self.real_photo, self.generated_m)
 
         # gan
         """support"""
         self.con_loss =  con_loss(self.real_photo, self.generated, 0.5)
-        # self.s22, self.s33, self.s44  = style_loss_decentralization_3(self.anime_sty_gray, self.fake_sty_gray,  [0.1, 1., 9.])
-        self.s22, self.s33, self.s44  = style_loss_decentralization_3(self.anime_sty_gray, self.fake_sty_gray,  [0.1, 5., 25.])
-        self.sty_loss = self.s22  + self.s33 +  self.s44
 
-        self.rs_loss =  region_smoothing_loss(self.fake_superpixel, self.generated, 0.2 ) \
-                        + VGG_LOSS(self.photo_superpixel, self.generated) * 0.2
+        self.s22, self.s33, self.s44  = style_loss_decentralization_3(self.anime_sty_gray, self.fake_sty_gray,  [0.1, 2.0,  28]) 
+        self.sty_loss = self.s22 + self.s33 + self.s44
 
+        self.rs_loss =  region_smoothing_loss(self.fake_superpixel, self.generated, 0.8 ) + \
+                        VGG_LOSS(self.photo_superpixel, self.generated) * 0.5
 
-        self.color_loss =  Lab_color_loss(self.real_photo, self.generated, 10. )
-        self.tv_loss  = 0.001 * total_variation_loss(self.generated)
+        self.color_loss =  Lab_color_loss(self.real_photo, self.generated, 8. )
+        self.tv_loss  = 0.0001 * total_variation_loss(self.generated)
 
         self.g_adv_loss = generator_loss(fake_gray_logit)
         self.G_support_loss = self.g_adv_loss + self.con_loss + self.sty_loss   + self.rs_loss +  self.color_loss +self.tv_loss
         self.D_support_loss = discriminator_loss(anime_gray_logit, fake_gray_logit) \
-                            + discriminator_loss_346(gray_anime_smooth_logit) * 2.0
+                            + discriminator_loss_346(gray_anime_smooth_logit) * 5.
         """main"""
-        self.tv_loss_m = 0.001 * total_variation_loss(self.generated_m)
+        self.tv_loss_m = 0.0001 * total_variation_loss(self.generated_m)
         self.p4_loss = VGG_LOSS(self.fake_NLMean_l0, self.generated_m) * 0.5
-        self.p0_loss = L1_loss(self.fake_NLMean_l0, self.generated_m) * 50.
+        self.p0_loss = L1_loss(self.fake_NLMean_l0, self.generated_m) * 50
         self.g_m_loss = generator_loss_m(generated_m_logit) * 0.02
 
         self.G_main_loss = self.g_m_loss + self.p0_loss + self.p4_loss + self.tv_loss_m
@@ -217,10 +217,9 @@ class AnimeGANv3(object) :
                     """ Update G """
                     # output fake image
                     inter_out_s, inter_out= self.sess.run([self.generated_s, self.generated], feed_dict=train_feed_dict)
-                    # superpixel_batch = self.get_simple_superpixel(inter_out, seg_num=200)
+                    # superpixel_batch = self.get_simple_superpixel_improve(inter_out, seg_num=200)
                     superpixel_batch = self.get_seg(inter_out)
                     fake_NLMean_batch = self.get_NLMean_l0(inter_out_s)
-
                     train_feed_dict.update(
                         {
                             self.fake_superpixel: superpixel_batch,
@@ -259,12 +258,13 @@ class AnimeGANv3(object) :
                            f'G_support_loss: {G_support_loss:.6f}, g_s_loss: {g_adv_loss:.6f}, con_loss: {con_loss:.6f}, rs_loss: {rs_loss:.6f}, sty_loss: {sty_loss:.6f}, s22: {s22:.6f}, s33: {s33:.6f}, s44: {s44:.6f}, color_loss: {color_loss:.6f}, tv_loss: {tv_loss:.6f} ~ D_support_loss: {D_support_loss:.6f} || ' + \
                            f'G_main_loss: {G_main_loss:.6f}, g_m_loss: {g_m_loss:.6f}, p0_loss: {p0_loss:.6f}, p4_loss: {p4_loss:.6f}, tv_loss_m: {tv_loss_m:.6f} ~ D_main_loss: {D_main_loss:.6f}'
                     print(info)
-            # 2---------------------------------------------------------------------------------
+             # 2---------------------------------------------------------------------------------
 
             if (epoch + 1) >= self.init_G_epoch and np.mod(epoch + 1, self.save_freq) == 0:
                 self.save(self.checkpoint_dir, epoch)
 
             if (epoch + 1) >= self.init_G_epoch:
+            # if (epoch + 1) >= 1:
                 """ Result Image """
                 val_files = glob('{}/{}/*.*'.format(self.dataset_dir, 'val'))
                 save_path = './{}/{:03d}/'.format(self.sample_dir, epoch)
@@ -272,10 +272,10 @@ class AnimeGANv3(object) :
                 for i, sample_file in enumerate(val_files):
                     print('val: '+ str(i) + sample_file)
                     sample_image = np.asarray(load_test_data(sample_file, self.img_size))
-                    val_real,test_s1, test_s0, test_m = self.sess.run([self.val_real,self.val_generated,self.val_generated_s,self.val_generated_m ],feed_dict = {self.val_real:sample_image} )
+                    val_real,test_, test_s, test_m = self.sess.run([self.val_real,self.val_generated,self.val_generated_s,self.val_generated_m ],feed_dict = {self.val_real:sample_image} )
                     save_images(val_real, save_path+'{:03d}_a.jpg'.format(i))
-                    save_images(test_s1, save_path+'{:03d}_b.jpg'.format(i))
-                    save_images(test_s0, save_path+'{:03d}_c.jpg'.format(i))
+                    save_images(test_, save_path+'{:03d}_b.jpg'.format(i))
+                    save_images(test_s, save_path+'{:03d}_c.jpg'.format(i))
                     save_images(test_m, save_path+'{:03d}_d.jpg'.format(i))
 
 
@@ -287,7 +287,7 @@ class AnimeGANv3(object) :
         def get_superpixel(image):
             image = (image + 1.) * 127.5
             image = np.clip(image, 0, 255).astype(np.uint8)  # [-1. ,1.] ~ [0, 255]
-            image_seg = segmentation.felzenszwalb(image, scale=5, sigma=0.8, min_size=50)
+            image_seg = segmentation.felzenszwalb(image, scale=5, sigma=0.8, min_size=100)
             image = color.label2rgb(image_seg, image,  bg_label=-1, kind='avg').astype(np.float32)
             image = image / 127.5 - 1.0
             return image
@@ -295,7 +295,7 @@ class AnimeGANv3(object) :
         batch_out = Parallel(n_jobs=num_job)(delayed(get_superpixel) (image) for image in batch_image)
         return np.array(batch_out)
 
-    def get_simple_superpixel(self, batch_image, seg_num=200):
+    def get_simple_superpixel_improve(self, batch_image, seg_num=200):
         def process_slic(image):
             seg_label = segmentation.slic(image, n_segments=seg_num, sigma=1, start_label=0,compactness=10, convert2lab=True)
             image = color.label2rgb(seg_label, image, bg_label=-1, kind='avg')
@@ -305,13 +305,13 @@ class AnimeGANv3(object) :
         return np.array(batch_out)
 
     def get_NLMean_l0(self, batch_image, ):
-        def process_revision(image):
+        def process_slic(image):
             image = ((image + 1) * 127.5).clip(0, 255).astype(np.uint8)
-            image = cv2.fastNlMeansDenoisingColored(image, None, 5, 6, 5, 7)
+            image = cv2.fastNlMeansDenoisingColored(image, None, 7, 6, 6, 7)
             image = L0Smoothing(image/255, 0.005).astype(np.float32) * 2. - 1.
             return image.clip(-1., 1.)
         num_job = np.shape(batch_image)[0]
-        batch_out = Parallel(n_jobs=num_job)(delayed(process_revision)(image) for image in batch_image)
+        batch_out = Parallel(n_jobs=num_job)(delayed(process_slic)(image) for image in batch_image)
         return np.array(batch_out)
 
 
