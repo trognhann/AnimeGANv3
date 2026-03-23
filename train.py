@@ -4,7 +4,7 @@ os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow.compat.v1 as tf
 tf.disable_eager_execution()
 
-from AnimeGANv3_shinkai import AnimeGANv3
+from AnimeGANv3_hayao import AnimeGANv3
 import argparse
 from tools.utils import *
 import os, time
@@ -14,15 +14,15 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 def parse_args():
     desc = "AnimeGANv3"
     parser = argparse.ArgumentParser(description=desc)
-    # parser.add_argument('--style_dataset', type=str, default='Hayao', help='dataset_name')
-    parser.add_argument('--style_dataset', type=str, default='Shinkai', help='dataset_name')
+    parser.add_argument('--style_dataset', type=str, default='Hayao', help='dataset_name')
+    # parser.add_argument('--style_dataset', type=str, default='Shinkai', help='dataset_name')
     parser.add_argument('--dataset_dir', type=str, default='dataset', help='dataset directory')
     parser.add_argument('--vgg_dir', type=str, default='vgg19_weight', help='vgg model directory')
 
     parser.add_argument('--init_G_epoch', type=int, default=5, help='The number of epochs for generator initialization')
-    parser.add_argument('--epoch', type=int, default=100, help='The number of epochs to run')
+    parser.add_argument('--epoch', type=int, default=75, help='The number of epochs to run')
     parser.add_argument('--batch_size', type=int, default=8, help='The size of batch size')
-    parser.add_argument('--save_freq', type=int, default=1, help='The number of ckpt_save_freq')
+    parser.add_argument('--save_freq', type=int, default=4, help='The number of ckpt_save_freq')
     parser.add_argument('--load_or_resume', type=str.lower, default="load", choices=["load", "resume"], help='load is used for fine-tuning and resume is used to continue training.')
 
     parser.add_argument('--init_G_lr', type=float, default=2e-4, help='The generator learning rate')

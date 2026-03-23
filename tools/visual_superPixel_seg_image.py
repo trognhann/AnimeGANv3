@@ -28,12 +28,12 @@ def get_superPixel (image_path):
     return out
 
 if __name__ == '__main__':
-    temp = '../dataset/seg_train_5-0.8-50'
+    temp = './dataset/seg_train_5-0.8-50'
     # temp = '../dataset/seg_slic_train_1000'
     check_folder(temp)
     # image_foder = '../dataset/val'
     # image_foder = '../dataset/Hayao/style'
-    image_foder = '../dataset/train_photo'
+    image_foder = './dataset/train_photo'
 
     for i, x in enumerate(os.listdir(image_foder)):
         print(i, x)

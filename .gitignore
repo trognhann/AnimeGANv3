@@ -3,3 +3,11 @@
 *.png
 __pycache__/
 checkpoint/
+*.png
+*.jpg
+*.npy
+*.npz
+*.ckpt
+*.zip
+*.7z
+.DS_Store

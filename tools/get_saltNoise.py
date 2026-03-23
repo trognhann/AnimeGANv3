@@ -26,8 +26,8 @@ def sp_noise(img, prob = 0.4):
 
 
 if __name__ == "__main__":
-    image_foder = '/media/ada/035ea81c-0b9a-4036-9c2a-a890e6fe0cee/ada/AnimeGANv3/dataset/Shinkai/smooth'
-    out_foder = '/media/ada/035ea81c-0b9a-4036-9c2a-a890e6fe0cee/ada/AnimeGANv3/dataset/Shinkai/smooth_noise'
+    image_foder = 'dataset/Shinkai/smooth'
+    out_foder = 'dataset/Shinkai/smooth_noise'
     check_folder(out_foder)
     imgs = os.listdir(image_foder)
     for x in tqdm(imgs):
