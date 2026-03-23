@@ -266,7 +266,7 @@ class AnimeGANv3(object) :
 
             if (epoch + 1) >= self.init_G_epoch:
                 """ Result Image """
-                val_files = glob('./dataset/{}/*.*'.format('val'))
+                val_files = glob('{}/{}/*.*'.format(self.dataset_dir, 'val'))
                 save_path = './{}/{:03d}/'.format(self.sample_dir, epoch)
                 check_folder(save_path)
                 for i, sample_file in enumerate(val_files):

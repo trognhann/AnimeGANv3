@@ -170,7 +170,7 @@ class AnimeGANv3(object) :
         # initialize all variables
         self.sess.run(tf.global_variables_initializer())
         # saver to save model
-        variables = tf.compat.v1.global_variables()
+        variables = tf.contrib.framework.get_variables_to_restore()
         variables_to_resotre = [v for v in variables if 'Adam' not in v.name]
         self.saver_load = tf.train.Saver(var_list=variables_to_resotre, max_to_keep=self.epoch)
         self.saver = tf.train.Saver(max_to_keep=self.epoch)
