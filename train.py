@@ -27,7 +27,7 @@ def parse_args():
 
     parser.add_argument('--init_G_lr', type=float, default=2e-4, help='The generator learning rate')
     parser.add_argument('--g_lr', type=float, default=1e-4, help='The learning rate')
-    parser.add_argument('--d_lr', type=float, default=1e-4, help='The learning rate')
+    parser.add_argument('--d_lr', type=float, default=5e-5, help='The learning rate')
 
     # ---------------------------------------------
     parser.add_argument('--img_size', type=int, nargs='+', default=[256,256], help='The size of image: H and W')
