@@ -1,5 +1,6 @@
-import os
+import os, time
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import tensorflow.compat.v1 as tf
 tf.disable_eager_execution()
@@ -7,8 +8,6 @@ tf.disable_eager_execution()
 from AnimeGANv3_hayao import AnimeGANv3
 import argparse
 from tools.utils import *
-import os, time
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 """parsing and configuration"""
 def parse_args():
