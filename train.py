@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--vgg_dir', type=str, default='vgg19_weight', help='vgg model directory')
 
     parser.add_argument('--init_G_epoch', type=int, default=5, help='The number of epochs for generator initialization')
-    parser.add_argument('--epoch', type=int, default=60, help='The number of epochs to run')
+    parser.add_argument('--epoch', type=int, default=100, help='The number of epochs to run')
     parser.add_argument('--batch_size', type=int, default=8, help='The size of batch size')
     parser.add_argument('--save_freq', type=int, default=4, help='The number of ckpt_save_freq')
     parser.add_argument('--load_or_resume', type=str.lower, default="load", choices=["load", "resume"], help='load is used for fine-tuning and resume is used to continue training.')

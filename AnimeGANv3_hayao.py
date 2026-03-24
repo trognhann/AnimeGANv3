@@ -14,22 +14,6 @@ from tools.L0_smoothing import L0Smoothing
 
 import sys
 
-class Logger(object):
-    def __init__(self, filename="hayao_train.log"):
-        self.terminal = sys.stdout
-        self.log = open(filename, "a", encoding="utf-8")
-
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)
-        self.log.flush()
-
-    def flush(self):
-        self.terminal.flush()
-        self.log.flush()
-
-sys.stdout = Logger("hayao_train.log")
-sys.stderr = sys.stdout
 
 class AnimeGANv3(object) :
     def __init__(self, sess, args):
@@ -235,8 +219,11 @@ class AnimeGANv3(object) :
                     _, init_loss, summary_str = self.sess.run([self.init_G_optim,self.Pre_train_G_loss, self.pretrianed_G_merge], feed_dict = train_feed_dict)
                     # self.writer.add_summary(summary_str, epoch)
                     step_time = time.time() - start_time
-                    print("Epoch: %3d, Step: %5d / %5d, time: %.3fs, ETA: %.2fs, Pre_train_G_loss: %.6f" % (
-                           epoch, idx, steps, step_time, step_time*(steps-idx+1), init_loss))
+                    info = "Epoch: %3d, Step: %5d / %5d, time: %.3fs, ETA: %.2fs, Pre_train_G_loss: %.6f" % (
+                           epoch, idx, steps, step_time, step_time*(steps-idx+1), init_loss)
+                    print(info)
+                    with open(os.path.join(self.log_dir, f"{self.model_dir}_loss.log"), "a", encoding="utf-8") as f:
+                        f.write(info + "\n")
 
                     """style transfer"""
                 else:
@@ -289,6 +276,8 @@ class AnimeGANv3(object) :
                            f'G_support_loss: {G_support_loss:.6f}, g_s_loss: {g_adv_loss:.6f}, con_loss: {con_loss:.6f}, rs_loss: {rs_loss:.6f}, sty_loss: {sty_loss:.6f}, s22: {s22:.6f}, s33: {s33:.6f}, s44: {s44:.6f}, color_loss: {color_loss:.6f}, tv_loss: {tv_loss:.6f} ~ D_support_loss: {D_support_loss:.6f} || ' + \
                            f'G_main_loss: {G_main_loss:.6f}, g_m_loss: {g_m_loss:.6f}, p0_loss: {p0_loss:.6f}, p4_loss: {p4_loss:.6f}, tv_loss_m: {tv_loss_m:.6f} ~ D_main_loss: {D_main_loss:.6f}'
                     print(info)
+                    with open(os.path.join(self.log_dir, f"{self.model_dir}_loss.log"), "a", encoding="utf-8") as f:
+                        f.write(info + "\n")
             # 2---------------------------------------------------------------------------------
 
             if (epoch + 1) >= self.init_G_epoch and np.mod(epoch + 1, self.save_freq) == 0:
