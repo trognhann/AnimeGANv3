@@ -12,6 +12,25 @@ from tools.GuidedFilter import guided_filter
 from tools.L0_smoothing import L0Smoothing
 
 
+import sys
+
+class Logger(object):
+    def __init__(self, filename="hayao_train.log"):
+        self.terminal = sys.stdout
+        self.log = open(filename, "a", encoding="utf-8")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+        self.log.flush()
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
+
+sys.stdout = Logger("hayao_train.log")
+sys.stderr = sys.stdout
+
 class AnimeGANv3(object) :
     def __init__(self, sess, args):
         self.model_name = 'AnimeGANv3'
