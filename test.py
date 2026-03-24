@@ -61,7 +61,7 @@ def tanh_out_scale(x):
 def parse_args():
     desc = "AnimeGANv3"
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('--checkpoint_dir', type=str, default='checkpoint/checkpoint_shaikin',help='Directory name to save the checkpoints')
+    parser.add_argument('--checkpoint_dir', type=str, default='checkpoint/checkpoint_hayao',help='Directory name to save the checkpoints')
     parser.add_argument('--test_dir', type=str, default='inputs/imgs', help='Directory name of test photos')
     parser.add_argument('--save_dir', type=str, default='style_results/',help='Directory name of results')
     return parser.parse_args()
