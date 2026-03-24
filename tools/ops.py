@@ -271,9 +271,38 @@ def LADE(x):
     x = x_in * (tf.sqrt(t_sigma + eps)) + t_mean
     return  x
 
+
+def LADE_controllable(x, alpha):
+    """
+    Controllable LADE (C-LADE).
+    Interpolates between original content features (alpha=0)
+    and fully LADE-stylized features (alpha=1).
+
+    Formula: (1 - alpha) * x  +  alpha * x_style
+
+    Using x directly (not reconstructed from x_in) avoids float32 errors.
+    alpha: scalar tf.Tensor in [0.0, 1.0]
+    """
+    eps = 1e-5
+    ch = x.shape[-1]
+    tx = Conv2D(x, ch, 1, 1)
+    t_mean, t_sigma = tf.nn.moments(tx, axes=[1, 2], keep_dims=True)
+    in_mean, in_sigma = tf.nn.moments(x, axes=[1, 2], keep_dims=True)
+    x_in = (x - in_mean) / tf.sqrt(in_sigma + eps)      # instance-norm
+    x_style = x_in * tf.sqrt(t_sigma + eps) + t_mean    # fully stylized
+    return (1.0 - alpha) * x + alpha * x_style
+
+
 def conv_LADE_Lrelu(inputs, filters, kernel_size=3, strides=1, name='conv', padding='VALID', Use_bias = None):
     x = Conv2D(inputs, filters, kernel_size, strides)
     x = LADE(x)
+    return lrelu(x)
+
+
+def conv_LADE_ctrl_Lrelu(inputs, filters, kernel_size=3, strides=1, alpha=1.0):
+    """Drop-in replacement for conv_LADE_Lrelu with controllable alpha."""
+    x = Conv2D(inputs, filters, kernel_size, strides)
+    x = LADE_controllable(x, alpha)
     return lrelu(x)
 
 ##################################################################################

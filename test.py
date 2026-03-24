@@ -64,18 +64,23 @@ def parse_args():
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoint/checkpoint_hayao',help='Directory name to save the checkpoints')
     parser.add_argument('--test_dir', type=str, default='inputs/imgs', help='Directory name of test photos')
     parser.add_argument('--save_dir', type=str, default='style_results/',help='Directory name of results')
+    parser.add_argument('--alpha', type=float, default=1.0,
+                        help='Style strength [0.0, 1.0]. 0=original photo, 1=full anime style (default: 1.0)')
     return parser.parse_args()
 
 
-def test(checkpoint_dir, save_dir, test_dir,):
+def test(checkpoint_dir, save_dir, test_dir, alpha=1.0):
     # tf.reset_default_graph()
     result_dir = check_folder(save_dir)
     test_files = glob('{}/*.*'.format(test_dir))
     test_real = tf.placeholder(tf.float32, [1, None, None, 3], name='AnimeGANv3_input')
+    # C-LADE: alpha controls style strength (0=content, 1=full anime)
+    alpha_val = float(np.clip(alpha, 0.0, 1.0))
+    print(f' [*] Style strength alpha = {alpha_val:.2f}')
     with tf.variable_scope("generator", reuse=False):
-        _, _ = generator.G_net(test_real, True)
+        _, _ = generator.G_net(test_real, True, alpha=alpha_val)
     with tf.variable_scope("generator", reuse=True):
-        test_s0, test_m = generator.G_net(test_real, False)
+        test_s0, test_m = generator.G_net(test_real, False, alpha=alpha_val)
         test_s1 = tanh_out_scale(guided_filter(sigm_out_scale(test_s0), sigm_out_scale(test_s0), 2, 0.01))  # 0.25**2
 
     variables = tf.compat.v1.global_variables()
@@ -116,4 +121,4 @@ def test(checkpoint_dir, save_dir, test_dir,):
 if __name__ == '__main__':
     arg = parse_args()
     print(arg.checkpoint_dir)
-    test(arg.checkpoint_dir, arg.save_dir, arg.test_dir)
+    test(arg.checkpoint_dir, arg.save_dir, arg.test_dir, alpha=arg.alpha)

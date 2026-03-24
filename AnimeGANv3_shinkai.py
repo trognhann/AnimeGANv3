@@ -55,6 +55,9 @@ class AnimeGANv3(object) :
         self.anime_smooth_generator = ImageGenerator('{}/{}/smooth_noise'.format(self.dataset_dir, self.dataset_name), self.img_size, self.batch_size)
         self.dataset_num = max(self.real_generator.num_images, self.anime_image_generator.num_images)
 
+        # --- C-LADE: style strength controller ---
+        self.alpha = tf.placeholder(tf.float32, [], name='style_alpha')
+
         print()
         print("##### Information #####")
         print("# dataset : ", self.dataset_name)
@@ -66,10 +69,9 @@ class AnimeGANv3(object) :
         print("# init_G_lr,g_lr,d_lr : ", self.init_G_lr,self.g_lr,self.d_lr)
         print()
 
-    def generator(self, x_init, is_training, reuse=False, scope="generator"):
-
+    def generator(self, x_init, is_training, reuse=False, scope="generator", alpha=1.0):
         with tf.variable_scope(scope, reuse=reuse):
-            fake_s, fake_m =  generator.G_net(x_init, is_training)
+            fake_s, fake_m = generator.G_net(x_init, is_training, alpha=alpha)
             return fake_s, fake_m
 
     def discriminator(self, x_init, reuse=False, scope="discriminator"):
@@ -79,12 +81,12 @@ class AnimeGANv3(object) :
     def build_train(self):
 
         """ Define Generator, Discriminator """
-        self.generated_s,  self.generated_m = self.generator(self.real_photo, is_training=True)
-        self.generated = self.tanh_out_scale(guided_filter(self.sigm_out_scale(self.generated_s),self.sigm_out_scale(self.generated_s), 2, 0.01)) #0.25**2
+        self.generated_s, self.generated_m = self.generator(self.real_photo, is_training=True, alpha=self.alpha)
+        self.generated = self.tanh_out_scale(guided_filter(self.sigm_out_scale(self.generated_s),self.sigm_out_scale(self.generated_s), 2, 0.01))
 
         """for val"""
-        self.val_generated_s, self.val_generated_m = self.generator(self.val_real, is_training=False, reuse=True)
-        self.val_generated = self.tanh_out_scale(guided_filter(self.sigm_out_scale(self.val_generated_s), self.sigm_out_scale(self.val_generated_s), 2, 0.01))  # 0.25**2
+        self.val_generated_s, self.val_generated_m = self.generator(self.val_real, is_training=False, reuse=True, alpha=self.alpha)
+        self.val_generated = self.tanh_out_scale(guided_filter(self.sigm_out_scale(self.val_generated_s), self.sigm_out_scale(self.val_generated_s), 2, 0.01))
 
         # gray maping
         self.fake_sty_gray = tf.image.grayscale_to_rgb(tf.image.rgb_to_grayscale(self.generated))
@@ -106,9 +108,11 @@ class AnimeGANv3(object) :
 
         # gan
         """support"""
-        self.con_loss =  con_loss(self.real_photo, self.generated, 0.5)
+        # Alpha-weighted content loss: stronger identity preservation at low alpha
+        content_weight = 1.0 + 2.0 * (1.0 - self.alpha)
+        self.con_loss = con_loss(self.real_photo, self.generated, 0.5 * content_weight)
 
-        self.s22, self.s33, self.s44  = style_loss_decentralization_3(self.anime_sty_gray, self.fake_sty_gray,  [0.1, 2.0,  28]) 
+        self.s22, self.s33, self.s44 = style_loss_decentralization_3(self.anime_sty_gray, self.fake_sty_gray, [0.1, 2.0, 28])
         self.sty_loss = self.s22 + self.s33 + self.s44
 
         self.rs_loss =  region_smoothing_loss(self.fake_superpixel, self.generated, 0.8 ) + \
@@ -117,8 +121,11 @@ class AnimeGANv3(object) :
         self.color_loss =  Lab_color_loss(self.real_photo, self.generated, 8. )
         self.tv_loss  = 0.0001 * total_variation_loss(self.generated)
 
-        self.g_adv_loss = generator_loss(fake_gray_logit)
-        self.G_support_loss = self.g_adv_loss + self.con_loss + self.sty_loss   + self.rs_loss +  self.color_loss +self.tv_loss
+        # Alpha-gated adversarial loss: active only when alpha > 0.5
+        # At low alpha the generator focuses on content/identity preservation
+        adv_mask = tf.cast(tf.greater(self.alpha, 0.5), tf.float32)
+        self.g_adv_loss = generator_loss(fake_gray_logit) * adv_mask
+        self.G_support_loss = self.g_adv_loss + self.con_loss + self.sty_loss + self.rs_loss + self.color_loss + self.tv_loss
         self.D_support_loss = discriminator_loss(anime_gray_logit, fake_gray_logit) \
                             + discriminator_loss_346(gray_anime_smooth_logit) * 5.
         """main"""
@@ -204,7 +211,10 @@ class AnimeGANv3(object) :
                 }
 
                 """ pre-training G """
-                if epoch < self.init_G_epoch :
+                if epoch < self.init_G_epoch:
+                    # Task-Switching: vary alpha even during pre-training so
+                    # Generator learns controllability from epoch 0
+                    train_feed_dict[self.alpha] = np.random.uniform(0.0, 1.0)
                     _, init_loss, summary_str = self.sess.run([self.init_G_optim,self.Pre_train_G_loss, self.pretrianed_G_merge], feed_dict = train_feed_dict)
                     # self.writer.add_summary(summary_str, epoch)
                     step_time = time.time() - start_time
@@ -215,6 +225,10 @@ class AnimeGANv3(object) :
                 else:
 
                     """ Update G """
+                    # Task-Switching: sample a random alpha for each batch
+                    alpha_val = np.random.uniform(0.0, 1.0)
+                    train_feed_dict[self.alpha] = alpha_val
+
                     # output fake image
                     inter_out_s, inter_out= self.sess.run([self.generated_s, self.generated], feed_dict=train_feed_dict)
                     # superpixel_batch = self.get_simple_superpixel_improve(inter_out, seg_num=200)
@@ -272,7 +286,9 @@ class AnimeGANv3(object) :
                 for i, sample_file in enumerate(val_files):
                     print('val: '+ str(i) + sample_file)
                     sample_image = np.asarray(load_test_data(sample_file, self.img_size))
-                    val_real,test_, test_s, test_m = self.sess.run([self.val_real,self.val_generated,self.val_generated_s,self.val_generated_m ],feed_dict = {self.val_real:sample_image} )
+                    # Validation always uses full style (alpha=1.0)
+                    val_feed = {self.val_real: sample_image, self.alpha: 1.0}
+                    val_real,test_, test_s, test_m = self.sess.run([self.val_real,self.val_generated,self.val_generated_s,self.val_generated_m], feed_dict=val_feed)
                     save_images(val_real, save_path+'{:03d}_a.jpg'.format(i))
                     save_images(test_, save_path+'{:03d}_b.jpg'.format(i))
                     save_images(test_s, save_path+'{:03d}_c.jpg'.format(i))
