@@ -3,6 +3,7 @@ import os,cv2
 from tqdm import tqdm
 from glob import glob
 import time
+os.environ['LD_LIBRARY_PATH'] = '/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cuda_runtime/lib'
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow.compat.v1 as tf
 tf.disable_eager_execution()

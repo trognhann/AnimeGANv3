@@ -1,4 +1,5 @@
 import os, time
+os.environ['LD_LIBRARY_PATH'] = '/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:/usr/local/lib/python3.12/dist-packages/nvidia/cuda_runtime/lib'
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
