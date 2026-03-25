@@ -44,9 +44,6 @@ class AnimeGANv3(object) :
         self.real_photo = tf.placeholder(tf.float32, [self.batch_size, self.img_size[0], self.img_size[1], self.img_ch], name='real_photo')
         self.photo_superpixel = tf.placeholder(tf.float32, [self.batch_size, self.img_size[0], self.img_size[1], self.img_ch], name='photo_superpixel')
 
-        self.fake_superpixel = tf.placeholder(tf.float32, [self.batch_size, self.img_size[0], self.img_size[1], self.img_ch], name='fake_superpixel')
-        self.fake_NLMean_l0 = tf.placeholder(tf.float32,[self.batch_size, self.img_size[0], self.img_size[1], self.img_ch], name='fake_NLMean_l0')
-
         self.anime = tf.placeholder(tf.float32, [self.batch_size, self.img_size[0], self.img_size[1], self.img_ch], name='anime_image')
         self.anime_smooth = tf.placeholder(tf.float32, [self.batch_size, self.img_size[0], self.img_size[1], self.img_ch], name='anime_smooth_image')
 
@@ -81,6 +78,14 @@ class AnimeGANv3(object) :
         """ Define Generator, Discriminator """
         self.generated_s,  self.generated_m = self.generator(self.real_photo, is_training=True)
         self.generated = self.tanh_out_scale(guided_filter(self.sigm_out_scale(self.generated_s),self.sigm_out_scale(self.generated_s), 2, 0.01)) #0.25**2
+
+        # --- GPU Acceleration Replacements ---
+        gf_superpixel = guided_filter(self.sigm_out_scale(self.generated), self.sigm_out_scale(self.generated), r=5, eps=0.05)
+        self.fake_superpixel = tf.stop_gradient(self.tanh_out_scale(gf_superpixel))
+        
+        gf_nlmean = guided_filter(self.sigm_out_scale(self.generated_s), self.sigm_out_scale(self.generated_s), r=7, eps=0.01)
+        self.fake_NLMean_l0 = tf.stop_gradient(self.tanh_out_scale(gf_nlmean))
+        # -------------------------------------
 
         """for val"""
         self.val_generated_s, self.val_generated_m = self.generator(self.val_real, is_training=False, reuse=True)
@@ -219,18 +224,6 @@ class AnimeGANv3(object) :
                 else:
 
                     """ Update G """
-                    # output fake image
-                    inter_out_s, inter_out= self.sess.run([self.generated_s, self.generated], feed_dict=train_feed_dict)
-                    # superpixel_batch = self.get_simple_superpixel(inter_out, seg_num=200)
-                    superpixel_batch = self.get_seg(inter_out)
-                    fake_NLMean_batch = self.get_NLMean_l0(inter_out_s)
-                    train_feed_dict.update(
-                        {
-                            self.fake_superpixel: superpixel_batch,
-                            self.fake_NLMean_l0: fake_NLMean_batch,
-                        }
-                    )
-
                     _, G_loss, G_support_loss, g_adv_loss, con_loss, rs_loss, sty_loss, s22, s33, s44, color_loss, tv_loss, \
                                G_main_loss, g_m_loss, p0_loss,p4_loss,tv_loss_m = self.sess.run([self.G_optim,
                                                                                                           self.Generator_loss,
