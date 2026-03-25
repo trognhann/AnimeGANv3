@@ -292,7 +292,7 @@ class AnimeGANv3(object) :
             image = image / 127.5 - 1.0
             return image
         num_job = np.shape(batch_image)[0]
-        batch_out = Parallel(n_jobs=num_job)(delayed(get_superpixel) (image) for image in batch_image)
+        batch_out = Parallel(n_jobs=num_job, prefer="threads")(delayed(get_superpixel)(image) for image in batch_image)
         return np.array(batch_out)
 
     def get_simple_superpixel_improve(self, batch_image, seg_num=200):
@@ -301,17 +301,18 @@ class AnimeGANv3(object) :
             image = color.label2rgb(seg_label, image, bg_label=-1, kind='avg')
             return image
         num_job = np.shape(batch_image)[0]
-        batch_out = Parallel(n_jobs=num_job)(delayed(process_slic)(image )for image in batch_image)
+        batch_out = Parallel(n_jobs=num_job, prefer="threads")(delayed(process_slic)(image) for image in batch_image)
         return np.array(batch_out)
 
-    def get_NLMean_l0(self, batch_image, ):
+    def get_NLMean_l0(self, batch_image):
         def process_slic(image):
+            cv2.setNumThreads(1)
             image = ((image + 1) * 127.5).clip(0, 255).astype(np.uint8)
             image = cv2.fastNlMeansDenoisingColored(image, None, 7, 6, 6, 7)
             image = L0Smoothing(image/255, 0.005).astype(np.float32) * 2. - 1.
             return image.clip(-1., 1.)
         num_job = np.shape(batch_image)[0]
-        batch_out = Parallel(n_jobs=num_job)(delayed(process_slic)(image) for image in batch_image)
+        batch_out = Parallel(n_jobs=num_job, prefer="threads")(delayed(process_slic)(image) for image in batch_image)
         return np.array(batch_out)
 
 
