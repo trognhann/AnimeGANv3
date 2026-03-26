@@ -3,8 +3,6 @@
 *.png
 __pycache__/
 checkpoint/
-*.png
-*.jpg
 *.npy
 *.npz
 *.ckpt
