@@ -4,7 +4,8 @@ os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import tensorflow.compat.v1 as tf
 tf.disable_eager_execution()
 
-from AnimeGANv3_hayao import AnimeGANv3
+
+# from AnimeGANv3_hayao import AnimeGANv3
 import argparse
 from tools.utils import *
 import os, time
@@ -82,6 +83,11 @@ def train():
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True,inter_op_parallelism_threads=8,
                                intra_op_parallelism_threads=8,gpu_options=gpu_options)) as sess:
     # with tf.Session() as sess:
+        if args.style_dataset == 'Ghibli_c1':
+            from AnimeGANv3_Ghibli_c1 import AnimeGANv3
+        else:
+            from AnimeGANv3_hayao import AnimeGANv3
+            
         gan = AnimeGANv3(sess, args)
         # build graph
         gan.build_train()
