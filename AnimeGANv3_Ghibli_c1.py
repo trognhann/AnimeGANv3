@@ -123,7 +123,7 @@ class AnimeGANv3(object) :
 
         # sty_weight (Trọng số Phong cách): Điều khiển độ mạnh yếu của style nét vẽ.
         # Với block Ghibli, ta muốn nét vẽ rõ ràng nhưng không bị biến dạng quá nhiều.
-        self.sty_weight = 3.0
+        self.sty_weight = 2.0
 
         # color_weight (Trọng số Màu sắc): Quan trọng nhất với Ghibli để giữ tone màu xanh lá/xanh lam trong trẻo.
         # Lab color loss giúp giữ độ sáng và bão hòa tự nhiên của ảnh gốc.
@@ -196,7 +196,7 @@ class AnimeGANv3(object) :
         self.con_loss =  con_loss(self.real_photo, self.generated, 0.5) * self.con_weight
 
         # Sty_loss: Sử dụng kiến trúc decentralization (3 cấp độ lọc) để học họa tiết Ghibli ở nhiều scale khác nhau.
-        self.s22, self.s33, self.s44  = style_loss_decentralization_3(self.anime_sty_gray, self.fake_sty_gray,  [0.1, 5., 25.])
+        self.s22, self.s33, self.s44  = style_loss_decentralization_3(self.anime_sty_gray, self.fake_sty_gray,  [0.1, 5., 35.])
         self.sty_loss = (self.s22  + self.s33 +  self.s44) * self.sty_weight
 
         # RS_loss: Region Smoothing kết hợp VGG giúp các biên cạnh sắc nét và mảng màu mịn.
